@@ -1,0 +1,21 @@
+[ {
+  "studentId" : "24127052",
+  "fullName" : "Phùng Bảo Khang",
+  "email" : "pbkhang@example.com",
+  "major" : "Computer Science"
+}, {
+  "studentId" : "24127345",
+  "fullName" : "Nguyễn Minh Đức",
+  "email" : "nmduc@example.com",
+  "major" : "Information System"
+}, {
+  "studentId" : "24127388",
+  "fullName" : "Hy Huê Hưng",
+  "email" : "hhhung@example.com",
+  "major" : "Software Engineering"
+}, {
+  "studentId" : "24127053",
+  "fullName" : "hung",
+  "email" : "a@b.c",
+  "major" : "Computer Science"
+} ]
