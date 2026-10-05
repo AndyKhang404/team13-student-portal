@@ -50,6 +50,12 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
+    <div th:if="${errorMessage}" class="alert alert-danger alert-slide alert-dismissible fade show shadow-sm d-flex align-items-center mb-4 border-0 rounded-4" role="alert" style="background:#fef2f2;border:1px solid #fecaca !important">
+        <span class="icon-tile icon-red me-3" style="width:42px;height:42px;font-size:1.2rem;border-radius:12px"><i class="bi bi-exclamation-triangle-fill"></i></span>
+        <div class="flex-grow-1 fw-medium" th:text="${errorMessage}">An error occurred.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4 reveal in">
         <div>
             <span class="badge bg-white border text-primary rounded-pill px-3 py-1 mb-2 shadow-sm"><i class="bi bi-hdd-stack me-1"></i>JSON-backed &bull; SSR list</span>
@@ -87,10 +93,11 @@
                     <thead>
                     <tr>
                         <th scope="col" class="ps-4" style="width: 5%">#</th>
-                        <th scope="col" style="width: 18%">Student ID</th>
-                        <th scope="col" style="width: 30%">Full Name</th>
-                        <th scope="col" style="width: 27%">Email</th>
-                        <th scope="col" class="pe-4 text-end" style="width: 20%">Major</th>
+                        <th scope="col" style="width: 17%">Student ID</th>
+                        <th scope="col" style="width: 28%">Full Name</th>
+                        <th scope="col" style="width: 24%">Email</th>
+                        <th scope="col" style="width: 16%">Major</th>
+                        <th scope="col" class="pe-4 text-end" style="width: 10%">Actions</th>
                     </tr>
                     </thead>
                     <tbody id="studentsTableBody">
@@ -114,14 +121,22 @@
                                 <i class="bi bi-envelope me-1 text-primary"></i><span th:text="${student.email}">student@example.com</span>
                             </a>
                         </td>
-                        <td class="pe-4 text-end">
+                        <td>
                             <span class="badge major-pill"
                                   th:text="${student.major}"
                                   th:classappend="${student.major == 'Computer Science' ? ' major-cs' : (student.major == 'Software Engineering' ? ' major-se' : (student.major == 'Information System' ? ' major-is' : (student.major == 'Cyber Security' ? ' major-cyber' : ' major-default')))}">Computer Science</span>
                         </td>
+                        <td class="pe-4 text-end">
+                            <form th:action="@{/students/{id}/delete(id=${student.studentId})}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Are you sure you want to delete this student?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" title="Delete Student">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     <tr id="noSearchResult" style="display:none">
-                        <td colspan="5" class="text-center py-5">
+                        <td colspan="6" class="text-center py-5">
                             <div class="empty-illu mb-3 mx-auto"><i class="bi bi-search"></i></div>
                             <h6 class="fw-bold">No matches</h6>
                             <p class="text-muted small mb-0">Try a different ID, name or email.</p>

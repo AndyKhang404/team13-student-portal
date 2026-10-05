@@ -4,13 +4,17 @@ import com.example.studentmanagement.exception.DuplicateStudentIdException;
 import com.example.studentmanagement.model.Student;
 import com.example.studentmanagement.service.StudentService;
 import jakarta.validation.Valid;
+import java.util.Optional;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
@@ -74,5 +78,63 @@ public class StudentController {
             model.addAttribute("openModal", true);
             return "students";
         }
+    }
+
+    /**
+     * Delete student via POST /{studentId}/delete (HTML form submission).
+     */
+    @PostMapping("/{studentId}/delete")
+    public String deleteStudentPath(
+            @PathVariable("studentId") String studentId,
+            RedirectAttributes redirectAttributes) {
+        return performDelete(studentId, redirectAttributes);
+    }
+
+    /**
+     * Delete student via POST /delete?studentId=... (HTML form submission).
+     */
+    @PostMapping("/delete")
+    public String deleteStudentParam(
+            @RequestParam("studentId") String studentId,
+            RedirectAttributes redirectAttributes) {
+        return performDelete(studentId, redirectAttributes);
+    }
+
+    /**
+     * Delete student via DELETE /{studentId} (REST).
+     */
+    @DeleteMapping("/{studentId}")
+    public String deleteStudentRest(
+            @PathVariable("studentId") String studentId,
+            RedirectAttributes redirectAttributes) {
+        return performDelete(studentId, redirectAttributes);
+    }
+
+    /**
+     * Delete student via DELETE /students?studentId=... (REST).
+     */
+    @DeleteMapping
+    public String deleteStudentRestParam(
+            @RequestParam("studentId") String studentId,
+            RedirectAttributes redirectAttributes) {
+        return performDelete(studentId, redirectAttributes);
+    }
+
+    private String performDelete(String studentId, RedirectAttributes redirectAttributes) {
+        Optional<Student> studentOpt = studentService.getStudentById(studentId);
+        boolean deleted = studentService.deleteStudent(studentId);
+        if (deleted) {
+            String name = studentOpt.map(Student::getFullName).orElse(studentId);
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Student " + name + " (" + studentId + ") was successfully deleted."
+            );
+        } else {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "Student with ID '" + studentId + "' could not be found."
+            );
+        }
+        return "redirect:/students";
     }
 }

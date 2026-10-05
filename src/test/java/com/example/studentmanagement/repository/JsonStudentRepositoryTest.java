@@ -77,4 +77,26 @@ class JsonStudentRepositoryTest {
         assertThatThrownBy(() -> repository.save(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void deleteById_existingStudent_removesStudentAndReturnsTrue() {
+        repository.init();
+        assertThat(repository.existsById("24127052")).isTrue();
+
+        boolean deleted = repository.deleteById("24127052");
+
+        assertThat(deleted).isTrue();
+        assertThat(repository.existsById("24127052")).isFalse();
+        assertThat(repository.findAll()).hasSize(2);
+    }
+
+    @Test
+    void deleteById_nonExistentStudent_returnsFalse() {
+        repository.init();
+
+        boolean deleted = repository.deleteById("00000000");
+
+        assertThat(deleted).isFalse();
+        assertThat(repository.findAll()).hasSize(3);
+    }
 }

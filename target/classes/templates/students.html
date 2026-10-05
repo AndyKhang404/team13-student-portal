@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students Directory - Student Management System</title>
+    <meta name="description" content="Browse and manage students stored in JSON">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link th:href="@{/css/app.css}" href="/css/app.css" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav class="navbar navbar-expand-lg navbar-dark navbar-portal sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" th:href="@{/}">
+            <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+            <span>Student Portal <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem">TEAM 13</span></span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+                <li class="nav-item">
+                    <a class="nav-link nav-link-portal" th:href="@{/}"><i class="bi bi-house-door me-1"></i>Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-portal active" th:href="@{/students}"><i class="bi bi-people me-1"></i>Students Directory</a>
+                </li>
+                <li class="nav-item ms-lg-2">
+                    <button type="button" class="btn btn-warning btn-sm fw-bold px-3 py-2 rounded-pill btn-shine" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                        <i class="bi bi-person-plus-fill me-1"></i>Add Student
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container my-4 my-md-5 flex-grow-1">
+
+    <div th:if="${successMessage}" class="alert alert-success alert-slide alert-dismissible fade show shadow-sm d-flex align-items-center mb-4 border-0 rounded-4" role="alert" style="background:#ecfdf5;border:1px solid #a7f3d0 !important">
+        <span class="icon-tile icon-green me-3" style="width:42px;height:42px;font-size:1.2rem;border-radius:12px"><i class="bi bi-check-circle-fill"></i></span>
+        <div class="flex-grow-1 fw-medium" th:text="${successMessage}">Student successfully added!</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-slide alert-dismissible fade show shadow-sm d-flex align-items-center mb-4 border-0 rounded-4" role="alert" style="background:#fef2f2;border:1px solid #fecaca !important">
+        <span class="icon-tile icon-red me-3" style="width:42px;height:42px;font-size:1.2rem;border-radius:12px"><i class="bi bi-exclamation-triangle-fill"></i></span>
+        <div class="flex-grow-1 fw-medium" th:text="${errorMessage}">An error occurred.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4 reveal in">
+        <div>
+            <span class="badge bg-white border text-primary rounded-pill px-3 py-1 mb-2 shadow-sm"><i class="bi bi-hdd-stack me-1"></i>JSON-backed &bull; SSR list</span>
+            <h2 class="page-title fw-bold mb-1 display-6">Students <span class="hl">Directory</span></h2>
+            <p class="text-muted mb-0">Search, browse and add records. Stored in <code>data/students.json</code>.</p>
+        </div>
+        <div class="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
+            <div class="search-wrap">
+                <i class="bi bi-search"></i>
+                <input id="studentSearch" type="search" class="form-control" placeholder="Search ID, name, email..." autocomplete="off">
+                <button id="studentSearchClear" class="btn btn-sm btn-light border rounded-pill position-absolute" style="right:6px;top:50%;transform:translateY(-50%);display:none" type="button"><i class="bi bi-x"></i></button>
+            </div>
+            <button type="button" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm rounded-pill btn-shine text-nowrap" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <i class="bi bi-person-plus-fill me-2"></i>Add Student
+            </button>
+        </div>
+    </div>
+
+    <div class="card table-card bg-white reveal in">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span class="fw-bold text-secondary">
+                <i class="bi bi-people-fill text-primary me-1"></i>
+                Total: <span class="badge bg-primary rounded-pill ms-1 count-up" th:text="${#lists.size(students)}" data-count-to="0" th:attr="data-count-to=${#lists.size(students)}">0</span>
+                <span class="text-muted fw-normal small ms-2">showing <span id="visibleCount" class="fw-bold text-dark" th:text="${#lists.size(students)}">0</span></span>
+            </span>
+            <span class="text-muted small d-flex align-items-center gap-2">
+                <span class="d-none d-md-inline"><i class="bi bi-file-earmark-code me-1"></i>Backed by <code>data/students.json</code></span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><span class="spinner-grow spinner-grow-sm me-1" style="width:.55rem;height:.55rem" role="status"></span>Live</span>
+            </span>
+        </div>
+
+        <div class="card-body p-0">
+            <div th:if="${!#lists.isEmpty(students)}" class="table-responsive">
+                <table class="table table-portal table-hover align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th scope="col" class="ps-4" style="width: 5%">#</th>
+                        <th scope="col" style="width: 17%">Student ID</th>
+                        <th scope="col" style="width: 28%">Full Name</th>
+                        <th scope="col" style="width: 24%">Email</th>
+                        <th scope="col" style="width: 16%">Major</th>
+                        <th scope="col" class="pe-4 text-end" style="width: 10%">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="studentsTableBody">
+                    <tr th:each="student, iterStat : ${students}"
+                        th:style="'--d:' + ${(iterStat.index % 10) * 0.05} + 's'"
+                        th:attr="data-search=${student.studentId + ' ' + student.fullName + ' ' + student.email + ' ' + student.major}">
+                        <td class="ps-4 text-muted fw-bold" th:text="${iterStat.count}">1</td>
+                        <td>
+                            <span class="badge bg-dark font-monospace rounded-pill px-3 py-1" th:text="${student.studentId}">24127052</span>
+                        </td>
+                        <td>
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="avatar"
+                                      th:classappend="${' avatar-' + (iterStat.index % 5)}"
+                                      th:text="${#strings.substring(student.fullName,0,1)}">P</span>
+                                <span class="fw-semibold text-dark" th:text="${student.fullName}">Phùng Bảo Khang</span>
+                            </span>
+                        </td>
+                        <td>
+                            <a th:href="'mailto:' + ${student.email}" class="text-decoration-none text-secondary">
+                                <i class="bi bi-envelope me-1 text-primary"></i><span th:text="${student.email}">student@example.com</span>
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge major-pill"
+                                  th:text="${student.major}"
+                                  th:classappend="${student.major == 'Computer Science' ? ' major-cs' : (student.major == 'Software Engineering' ? ' major-se' : (student.major == 'Information System' ? ' major-is' : (student.major == 'Cyber Security' ? ' major-cyber' : ' major-default')))}">Computer Science</span>
+                        </td>
+                        <td class="pe-4 text-end">
+                            <form th:action="@{/students/{id}/delete(id=${student.studentId})}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Are you sure you want to delete this student?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" title="Delete Student">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr id="noSearchResult" style="display:none">
+                        <td colspan="6" class="text-center py-5">
+                            <div class="empty-illu mb-3 mx-auto"><i class="bi bi-search"></i></div>
+                            <h6 class="fw-bold">No matches</h6>
+                            <p class="text-muted small mb-0">Try a different ID, name or email.</p>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${#lists.isEmpty(students)}" class="text-center py-5 px-4">
+                <div class="empty-illu mb-3"><i class="bi bi-inbox"></i></div>
+                <h5 class="fw-bold text-secondary">No Students Found</h5>
+                <p class="text-muted mb-3">There are currently no students in the JSON record.</p>
+                <button type="button" class="btn btn-primary rounded-pill px-4 btn-shine" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                    <i class="bi bi-person-plus-fill me-1"></i>Add the First Student
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-4">
+        <div class="col-md-4 reveal" style="--d:.05s">
+            <div class="card card-lift p-3 h-100"><div class="d-flex gap-3 align-items-center"><div class="icon-tile icon-blue" style="width:44px;height:44px;font-size:1.2rem"><i class="bi bi-lightning-charge"></i></div><div><div class="fw-bold small">Instant PRG feedback</div><div class="text-muted small">Modal re-opens with errors preserved</div></div></div></div>
+        </div>
+        <div class="col-md-4 reveal" style="--d:.12s">
+            <div class="card card-lift p-3 h-100"><div class="d-flex gap-3 align-items-center"><div class="icon-tile icon-green" style="width:44px;height:44px;font-size:1.2rem"><i class="bi bi-lock"></i></div><div><div class="fw-bold small">Duplicate-safe IDs</div><div class="text-muted small">Numeric check + uniqueness guard</div></div></div></div>
+        </div>
+        <div class="col-md-4 reveal" style="--d:.19s">
+            <div class="card card-lift p-3 h-100"><div class="d-flex gap-3 align-items-center"><div class="icon-tile icon-amber" style="width:44px;height:44px;font-size:1.2rem"><i class="bi bi-search"></i></div><div><div class="fw-bold small">Client search</div><div class="text-muted small">Type above to filter without reload</div></div></div></div>
+        </div>
+    </div>
+
+</main>
+
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-portal border-0 shadow-lg">
+            <div class="modal-header modal-head-grad text-white border-0 px-4 py-3">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="addStudentModalLabel">
+                    <span class="brand-mark" style="width:32px;height:32px;font-size:1rem"><i class="bi bi-person-plus-fill"></i></span>
+                    Add New Student
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form th:action="@{/students}" th:object="${studentForm}" method="post" novalidate>
+                <div class="modal-body p-4">
+
+                    <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger py-2 mb-3 small d-flex align-items-center rounded-3">
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-6"></i>
+                        <span>Please correct the errors indicated below.</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="studentId" class="form-label fw-semibold">
+                            Student ID <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                            <input type="text"
+                                   id="studentId"
+                                   class="form-control font-monospace"
+                                   placeholder="e.g. 24127052"
+                                   inputmode="numeric"
+                                   pattern="[0-9]+"
+                                   th:field="*{studentId}"
+                                   th:errorclass="is-invalid"
+                                   required />
+                            <div class="invalid-feedback" th:errors="*{studentId}">
+                                Student ID is invalid.
+                            </div>
+                        </div>
+                        <div class="form-text">Unique student identifier (numeric digits only).</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fullName" class="form-label fw-semibold">
+                            Full Name <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text"
+                                   id="fullName"
+                                   class="form-control"
+                                   placeholder="e.g. Nguyễn Văn A"
+                                   th:field="*{fullName}"
+                                   th:errorclass="is-invalid"
+                                   required />
+                            <div class="invalid-feedback" th:errors="*{fullName}">
+                                Full name is required.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-semibold">
+                            Email Address <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            <input type="email"
+                                   id="email"
+                                   class="form-control"
+                                   placeholder="e.g. student@example.com"
+                                   th:field="*{email}"
+                                   th:errorclass="is-invalid"
+                                   required />
+                            <div class="invalid-feedback" th:errors="*{email}">
+                                Valid email is required.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-1">
+                        <label for="major" class="form-label fw-semibold">
+                            Major <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
+                            <select id="major"
+                                    class="form-select"
+                                    th:field="*{major}"
+                                    th:errorclass="is-invalid"
+                                    required>
+                                <option value="">-- Select a Major --</option>
+                                <option th:each="m : ${allowedMajors}" th:value="${m}" th:text="${m}">Computer Science</option>
+                            </select>
+                            <div class="invalid-feedback" th:errors="*{major}">
+                                Please select a valid major.
+                            </div>
+                        </div>
+                        <div class="form-text">Must be one of the 4 official majors.</div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer bg-light px-4 py-3 border-0">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary fw-semibold px-4 rounded-pill btn-shine">
+                        <i class="bi bi-check-circle-fill me-1"></i>Save Student
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer class="footer-portal border-top py-4 mt-auto">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 text-muted small">
+        <span>&copy; 2026 Student Management System &bull; Team 13 &bull; HCMUS</span>
+        <span><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Java &amp; Spring Boot SSR &bull; Bootstrap 5</span>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script th:src="@{/js/app.js}" src="/js/app.js"></script>
+
+<script th:if="${openModal}">
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalEl = document.getElementById('addStudentModal');
+        if (modalEl) {
+            var studentModal = new bootstrap.Modal(modalEl);
+            studentModal.show();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+com/example/studentmanagement/StudentManagementApplication.class
+com/example/studentmanagement/repository/JsonStudentRepository$1.class
+com/example/studentmanagement/model/Student.class
+com/example/studentmanagement/controller/HomeController.class
+com/example/studentmanagement/exception/DuplicateStudentIdException.class
+com/example/studentmanagement/controller/StudentController.class
+com/example/studentmanagement/service/StudentService.class
+com/example/studentmanagement/repository/JsonStudentRepository.class
+com/example/studentmanagement/repository/StudentRepository.class

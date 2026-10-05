@@ -70,4 +70,31 @@ class StudentServiceTest {
 
         verify(studentRepository, never()).save(any());
     }
+
+    @Test
+    void deleteStudent_existingStudent_returnsTrue() {
+        when(studentRepository.deleteById("24127052")).thenReturn(true);
+
+        boolean result = studentService.deleteStudent("24127052");
+
+        assertThat(result).isTrue();
+        verify(studentRepository).deleteById("24127052");
+    }
+
+    @Test
+    void deleteStudent_nonExistentStudent_returnsFalse() {
+        when(studentRepository.deleteById("00000000")).thenReturn(false);
+
+        boolean result = studentService.deleteStudent("00000000");
+
+        assertThat(result).isFalse();
+        verify(studentRepository).deleteById("00000000");
+    }
+
+    @Test
+    void deleteStudent_nullOrBlank_returnsFalseWithoutCallingRepo() {
+        assertThat(studentService.deleteStudent(null)).isFalse();
+        assertThat(studentService.deleteStudent("   ")).isFalse();
+        verify(studentRepository, never()).deleteById(any());
+    }
 }

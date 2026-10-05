@@ -135,6 +135,28 @@ public class JsonStudentRepository implements StudentRepository {
         }
     }
 
+    @Override
+    public boolean deleteById(String studentId) {
+        if (studentId == null || studentId.isBlank()) {
+            return false;
+        }
+        rwLock.writeLock().lock();
+        try {
+            List<Student> currentStudents = new ArrayList<>(readStudentsInternal());
+            boolean removed = currentStudents.removeIf(s -> s.getStudentId() != null && s.getStudentId().equalsIgnoreCase(studentId.trim()));
+            if (removed) {
+                writeStudentsInternal(currentStudents);
+                log.info("Deleted student: {} from {}", studentId, storagePath);
+            }
+            return removed;
+        } catch (IOException e) {
+            log.error("Failed to update student storage after deletion at {}", storagePath, e);
+            throw new RuntimeException("Could not delete student from JSON storage", e);
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
     private List<Student> readStudentsInternal() {
         if (!Files.exists(storagePath)) {
             return Collections.emptyList();

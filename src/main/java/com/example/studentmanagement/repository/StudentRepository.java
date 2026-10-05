@@ -39,4 +39,12 @@ public interface StudentRepository {
      * @return The saved student
      */
     Student save(Student student);
+
+    /**
+     * Delete a student by studentId.
+     *
+     * @param studentId The unique identifier of the student
+     * @return true if deleted, false if not found
+     */
+    boolean deleteById(String studentId);
 }

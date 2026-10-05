@@ -28,8 +28,11 @@ A Server-Side Rendered (SSR) web application built with Java, Spring Boot, and T
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `GET` | `/` | Landing/Home page with project features, development team roster, and CTA to `/students` |
-| `GET` | `/students` | Student Directory page rendering the full list of students and the "Add Student" modal |
+| `GET` | `/students` | Student Directory page rendering the full list of students, actions, and the "Add Student" modal |
 | `POST` | `/students` | Form submission endpoint to add a new student |
+| `POST` | `/students/{id}/delete` | HTML form action to delete a student by ID with confirmation prompt |
+| `DELETE` | `/students/{id}` | REST endpoint to delete a student by ID |
+| `DELETE` | `/students?studentId={id}` | REST endpoint to delete a student by request parameter |
 
 ---
 

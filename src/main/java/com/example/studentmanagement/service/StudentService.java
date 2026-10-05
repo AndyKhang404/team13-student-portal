@@ -66,4 +66,17 @@ public class StudentService {
 
         return studentRepository.save(student);
     }
+
+    /**
+     * Delete a student by studentId.
+     *
+     * @param studentId The unique identifier of the student
+     * @return true if deleted, false if not found
+     */
+    public boolean deleteStudent(String studentId) {
+        if (studentId == null || studentId.isBlank()) {
+            return false;
+        }
+        return studentRepository.deleteById(studentId.trim());
+    }
 }
