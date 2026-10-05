@@ -12,15 +12,10 @@ import java.util.Objects;
  */
 public class Student {
 
-    public static final List<String> ALLOWED_MAJORS = List.of(
-            "Computer Science",
-            "Software Engineering",
-            "Information System",
-            "Cyber Security"
-    );
+    public static final List<String> ALLOWED_MAJORS = Major.allDisplayNames();
 
     @NotBlank(message = "Student ID is required")
-    @Pattern(regexp = "^[0-9]+$", message = "Student ID must be a numeric string")
+    @Pattern(regexp = "^[0-9]{8}$", message = "Student ID must be exactly 8 digits (e.g. 24127052)")
     private String studentId;
 
     @NotBlank(message = "Full name is required")

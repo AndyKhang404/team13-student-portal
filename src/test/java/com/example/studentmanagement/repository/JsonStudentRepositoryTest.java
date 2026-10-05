@@ -1,7 +1,8 @@
 package com.example.studentmanagement.repository;
 
 import com.example.studentmanagement.model.Student;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,7 +28,7 @@ class JsonStudentRepositoryTest {
     @BeforeEach
     void setUp() {
         jsonFile = tempDir.resolve("test-students.json");
-        objectMapper = new ObjectMapper();
+        objectMapper = JsonMapper.builder().build();
         repository = new JsonStudentRepository(jsonFile.toString(), objectMapper);
     }
 
@@ -42,6 +43,17 @@ class JsonStudentRepositoryTest {
         assertThat(students).hasSize(3);
         assertThat(students).extracting(Student::getStudentId)
                 .containsExactlyInAnyOrder("24127052", "24127345", "24127388");
+    }
+
+    @Test
+    void init_doesNotSeedWhenFileAlreadyExistsEvenIfEmpty() throws IOException {
+        Files.writeString(jsonFile, "[]");
+        assertThat(Files.exists(jsonFile)).isTrue();
+
+        repository.init();
+
+        List<Student> students = repository.findAll();
+        assertThat(students).isEmpty();
     }
 
     @Test

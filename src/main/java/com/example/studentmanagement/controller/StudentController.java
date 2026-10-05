@@ -5,6 +5,7 @@ import com.example.studentmanagement.model.Student;
 import com.example.studentmanagement.service.StudentService;
 import jakarta.validation.Valid;
 import java.util.Optional;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
@@ -81,46 +81,13 @@ public class StudentController {
     }
 
     /**
-     * Delete student via POST /{studentId}/delete (HTML form submission).
+     * Delete student via HTML form submission: POST /{studentId}/delete.
+     * Uses PRG (Post-Redirect-Get) with flash message.
      */
     @PostMapping("/{studentId}/delete")
-    public String deleteStudentPath(
+    public String deleteStudentForm(
             @PathVariable("studentId") String studentId,
             RedirectAttributes redirectAttributes) {
-        return performDelete(studentId, redirectAttributes);
-    }
-
-    /**
-     * Delete student via POST /delete?studentId=... (HTML form submission).
-     */
-    @PostMapping("/delete")
-    public String deleteStudentParam(
-            @RequestParam("studentId") String studentId,
-            RedirectAttributes redirectAttributes) {
-        return performDelete(studentId, redirectAttributes);
-    }
-
-    /**
-     * Delete student via DELETE /{studentId} (REST).
-     */
-    @DeleteMapping("/{studentId}")
-    public String deleteStudentRest(
-            @PathVariable("studentId") String studentId,
-            RedirectAttributes redirectAttributes) {
-        return performDelete(studentId, redirectAttributes);
-    }
-
-    /**
-     * Delete student via DELETE /students?studentId=... (REST).
-     */
-    @DeleteMapping
-    public String deleteStudentRestParam(
-            @RequestParam("studentId") String studentId,
-            RedirectAttributes redirectAttributes) {
-        return performDelete(studentId, redirectAttributes);
-    }
-
-    private String performDelete(String studentId, RedirectAttributes redirectAttributes) {
         Optional<Student> studentOpt = studentService.getStudentById(studentId);
         boolean deleted = studentService.deleteStudent(studentId);
         if (deleted) {
@@ -136,5 +103,18 @@ public class StudentController {
             );
         }
         return "redirect:/students";
+    }
+
+    /**
+     * REST endpoint: DELETE /{studentId}.
+     * Returns 204 No Content on successful deletion, 404 Not Found if missing.
+     */
+    @DeleteMapping("/{studentId}")
+    public ResponseEntity<Void> deleteStudentRest(@PathVariable("studentId") String studentId) {
+        boolean deleted = studentService.deleteStudent(studentId);
+        if (deleted) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }

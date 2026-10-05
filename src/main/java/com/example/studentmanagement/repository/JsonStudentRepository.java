@@ -1,9 +1,10 @@
 package com.example.studentmanagement.repository;
 
 import com.example.studentmanagement.model.Student;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +41,14 @@ public class JsonStudentRepository implements StudentRepository {
     @org.springframework.beans.factory.annotation.Autowired
     public JsonStudentRepository(
             @Value("${app.storage.file-path:data/students.json}") String filePathString) {
-        this(filePathString, new ObjectMapper());
+        this(filePathString, JsonMapper.builder().build());
     }
 
     public JsonStudentRepository(String filePathString, ObjectMapper objectMapper) {
         this.storagePath = Paths.get(filePathString);
-        this.objectMapper = (objectMapper != null ? objectMapper.copy() : new ObjectMapper())
-                .enable(SerializationFeature.INDENT_OUTPUT);
+        this.objectMapper = (objectMapper != null ? objectMapper.rebuild() : JsonMapper.builder())
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .build();
     }
 
     @PostConstruct
@@ -58,8 +60,8 @@ public class JsonStudentRepository implements StudentRepository {
                 log.info("Created storage directory: {}", storagePath.getParent());
             }
 
-            if (!Files.exists(storagePath) || Files.size(storagePath) == 0) {
-                log.info("Storage file not found or empty. Seeding initial student data from team roster...");
+            if (!Files.exists(storagePath)) {
+                log.info("Storage file not found. Seeding initial student data from team roster...");
                 List<Student> initialSeed = List.of(
                         new Student("24127052", "Phùng Bảo Khang", "pbkhang@example.com", "Computer Science"),
                         new Student("24127345", "Nguyễn Minh Đức", "nmduc@example.com", "Information System"),
@@ -168,7 +170,7 @@ public class JsonStudentRepository implements StudentRepository {
             }
             List<Student> students = objectMapper.readValue(file, new TypeReference<List<Student>>() {});
             return students != null ? students : Collections.emptyList();
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Failed to read students from {}", storagePath, e);
             throw new RuntimeException("Could not read students from JSON storage", e);
         }
@@ -187,6 +189,9 @@ public class JsonStudentRepository implements StudentRepository {
             } catch (AtomicMoveNotSupportedException e) {
                 Files.move(tempFile, storagePath, StandardCopyOption.REPLACE_EXISTING);
             }
+        } catch (Exception e) {
+            log.error("Failed to write student data to temporary file", e);
+            throw (e instanceof IOException ? (IOException) e : new IOException(e));
         } finally {
             if (Files.exists(tempFile)) {
                 try {

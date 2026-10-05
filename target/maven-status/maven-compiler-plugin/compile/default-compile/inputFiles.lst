@@ -2,6 +2,7 @@
 /home/pbkhang404/Documents/HCMUS/Y3/S1/web/team13-student-portal/src/main/java/com/example/studentmanagement/controller/HomeController.java
 /home/pbkhang404/Documents/HCMUS/Y3/S1/web/team13-student-portal/src/main/java/com/example/studentmanagement/controller/StudentController.java
 /home/pbkhang404/Documents/HCMUS/Y3/S1/web/team13-student-portal/src/main/java/com/example/studentmanagement/exception/DuplicateStudentIdException.java
+/home/pbkhang404/Documents/HCMUS/Y3/S1/web/team13-student-portal/src/main/java/com/example/studentmanagement/model/Major.java
 /home/pbkhang404/Documents/HCMUS/Y3/S1/web/team13-student-portal/src/main/java/com/example/studentmanagement/model/Student.java
 /home/pbkhang404/Documents/HCMUS/Y3/S1/web/team13-student-portal/src/main/java/com/example/studentmanagement/repository/JsonStudentRepository.java
 /home/pbkhang404/Documents/HCMUS/Y3/S1/web/team13-student-portal/src/main/java/com/example/studentmanagement/repository/StudentRepository.java

@@ -59,8 +59,8 @@
                 <span class="grad">beautifully simple.</span>
             </h1>
             <p class="hero-sub lead col-lg-8 mx-auto mb-4">
-                A lightweight server-rendered portal with thread-safe JSON persistence,
-                instant validation and PRG-safe forms. No database, no ORM &mdash; just speed.
+                A lightweight server-rendered portal for adding, listing, and deleting student records with thread-safe JSON persistence,
+                instant validation, and PRG-safe forms. No database, no ORM &mdash; strictly Add, List, and Delete.
             </p>
             <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center mb-4">
                 <a th:href="@{/students}" class="btn btn-warning btn-lg px-4 fw-bold text-dark shadow btn-shine rounded-pill">
@@ -123,11 +123,11 @@
             <div class="card feature-card h-100 p-2" data-tilt style="--accent-grad:linear-gradient(90deg,#f43f5e,#f59e0b)">
                 <div class="card-body">
                     <div class="icon-tile icon-rose mb-3"><i class="bi bi-shield-check"></i></div>
-                    <h5 class="card-title fw-bold">Validation &amp; Integrity</h5>
+                    <h5 class="card-title fw-bold">Validation &amp; Deletion</h5>
                     <p class="card-text text-muted mb-3">
-                        Required-field, email and numeric-ID checks plus duplicate prevention with input retention (PRG pattern).
+                        Required-field, 8-digit ID and major checks, duplicate prevention, and one-click deletion with confirmation dialogs.
                     </p>
-                    <span class="small fw-semibold text-danger">Jakarta Validation <i class="bi bi-arrow-right ms-1"></i></span>
+                    <span class="small fw-semibold text-danger">Jakarta Validation &bull; Add, List, Delete <i class="bi bi-arrow-right ms-1"></i></span>
                 </div>
             </div>
         </div>

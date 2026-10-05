@@ -76,6 +76,19 @@ class StudentControllerTest {
     }
 
     @Test
+    void addStudent_non8DigitStudentId_returnsStudentsViewWithError() throws Exception {
+        mockMvc.perform(post("/students")
+                        .param("studentId", "1234567")
+                        .param("fullName", "Alex Smith")
+                        .param("email", "alex@example.com")
+                        .param("major", "Computer Science"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("students"))
+                .andExpect(model().attribute("openModal", true))
+                .andExpect(model().attributeHasFieldErrors("studentForm", "studentId"));
+    }
+
+    @Test
     void addStudent_invalidMajor_returnsStudentsViewWithError() throws Exception {
         mockMvc.perform(post("/students")
                         .param("studentId", "24129999")
@@ -132,42 +145,34 @@ class StudentControllerTest {
     }
 
     @Test
-    void deleteStudentRest_success_redirectsWithFlashAttribute() throws Exception {
-        Student s = new Student("24127052", "Phùng Bảo Khang", "pbkhang@example.com", "Computer Science");
-        when(studentService.getStudentById("24127052")).thenReturn(Optional.of(s));
-        when(studentService.deleteStudent("24127052")).thenReturn(true);
-
-        mockMvc.perform(delete("/students/24127052"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/students"))
-                .andExpect(flash().attributeExists("successMessage"));
-
-        verify(studentService).deleteStudent("24127052");
-    }
-
-    @Test
-    void deleteStudentParam_success_redirectsWithFlashAttribute() throws Exception {
-        Student s = new Student("24127052", "Phùng Bảo Khang", "pbkhang@example.com", "Computer Science");
-        when(studentService.getStudentById("24127052")).thenReturn(Optional.of(s));
-        when(studentService.deleteStudent("24127052")).thenReturn(true);
-
-        mockMvc.perform(post("/students/delete").param("studentId", "24127052"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/students"))
-                .andExpect(flash().attributeExists("successMessage"));
-
-        verify(studentService).deleteStudent("24127052");
-    }
-
-    @Test
-    void deleteStudent_notFound_redirectsWithErrorMessage() throws Exception {
+    void deleteStudentPath_notFound_redirectsWithErrorMessage() throws Exception {
         when(studentService.getStudentById("99999999")).thenReturn(Optional.empty());
         when(studentService.deleteStudent("99999999")).thenReturn(false);
 
-        mockMvc.perform(delete("/students/99999999"))
+        mockMvc.perform(post("/students/99999999/delete"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students"))
                 .andExpect(flash().attribute("errorMessage", "Student with ID '99999999' could not be found."));
+
+        verify(studentService).deleteStudent("99999999");
+    }
+
+    @Test
+    void deleteStudentRest_success_returnsNoContent() throws Exception {
+        when(studentService.deleteStudent("24127052")).thenReturn(true);
+
+        mockMvc.perform(delete("/students/24127052"))
+                .andExpect(status().isNoContent());
+
+        verify(studentService).deleteStudent("24127052");
+    }
+
+    @Test
+    void deleteStudentRest_notFound_returnsNotFound() throws Exception {
+        when(studentService.deleteStudent("99999999")).thenReturn(false);
+
+        mockMvc.perform(delete("/students/99999999"))
+                .andExpect(status().isNotFound());
 
         verify(studentService).deleteStudent("99999999");
     }
