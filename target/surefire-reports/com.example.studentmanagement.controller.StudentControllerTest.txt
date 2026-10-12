@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.example.studentmanagement.controller.StudentControllerTest
--------------------------------------------------------------------------------
-Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.902 s -- in com.example.studentmanagement.controller.StudentControllerTest

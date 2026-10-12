@@ -1,6 +1,6 @@
-# Student Management System (SSR with Java + Spring Boot)
+# Student Management System (SSR with Node.js + Express + EJS)
 
-A Server-Side Rendered (SSR) web application built with Java, Spring Boot 4, and Thymeleaf. The application scope strictly covers **Add**, **List**, and **Delete** student operations. Student data is persisted strictly using a JSON file (`data/students.json`) with thread-safe file operations and zero database/ORM dependencies.
+A Server-Side Rendered (SSR) web application built with Node.js, Express 4, and EJS. Refactored in-place from the original Java + Spring Boot + Thymeleaf version. Scope strictly covers **Add**, **List**, and **Delete** student operations. Data is persisted in `data/students.json` with a mutex and atomic file swaps — zero database/ORM.
 
 ## Members
 |Student ID|Name|
@@ -12,124 +12,80 @@ A Server-Side Rendered (SSR) web application built with Java, Spring Boot 4, and
 ---
 
 ## Features
-- **Server-Side Rendering (SSR):** Powered by Thymeleaf and styled with Bootstrap 5.
-- **Pure JSON Storage:** All student data is stored in [`data/students.json`](data/students.json) with `ReentrantReadWriteLock` for concurrency safety and atomic file swapping.
-- **Pre-seeded Roster & Retention:** Automatically initializes and seeds the roster with the team members on first run if the file does not exist. An empty student list `[]` (if all students are deleted) is preserved across restarts.
+- **Server-Side Rendering (SSR):** EJS templates styled with Bootstrap 5.
+- **Pure JSON Storage:** `data/students.json` with `async-mutex` + atomic temp-file rename.
+- **Pre-seeded Roster & Retention:** Seeds team roster on first run if file missing. Empty `[]` preserved across restarts.
 - **Form Validation & Duplicate Check:**
-  - Mandatory fields: Student ID, Full Name, Email, Major.
-  - Student ID validation: Exactly 8 numeric digits (`^[0-9]{8}$`, e.g., `24127052`).
-  - Major validation: Single source of truth via `Major` enum (`Computer Science`, `Software Engineering`, `Information System`, `Cyber Security`).
+  - Mandatory: Student ID, Full Name, Email, Major.
+  - Student ID: exactly 8 digits (`^[0-9]{8}$`).
+  - Major: single source of truth in `src/models/majors.js` (`Computer Science`, `Software Engineering`, `Information System`, `Cyber Security`).
   - Email format validation.
-  - Unique Student ID verification with inline error feedback.
-  - Post-Redirect-Get (PRG) pattern with automatic modal re-opening and form input preservation upon validation errors.
+  - Unique Student ID with inline error.
+  - PRG pattern with modal re-open + input preservation on errors.
 - **Record Deletion:**
-  - Web UI deletion via `POST /students/{id}/delete` with confirmation dialog and flash message.
-  - RESTful deletion via `DELETE /students/{id}` returning standard HTTP status codes.
+  - Web UI via `POST /students/{id}/delete` with confirm + flash.
+  - REST via `DELETE /students/{id}` (`204` / `404`).
 
 ---
 
-## Data Flow Architecture
+## Project Structure
+```
+package.json / server.js / app entry (src/app.js)
+src/config.js                    # PORT, STORAGE_PATH, SESSION_SECRET
+src/models/majors.js             # ALLOWED_MAJORS + isValid + majorClass
+src/models/validators.js         # trims + Jakarta-parity messages
+src/errors.js                    # DuplicateStudentIdException
+src/repositories/jsonStudentRepository.js  # findAll/findById/existsById/save/deleteById + seed + atomic write
+src/services/studentService.js   # sorted getAll, add (duplicate guard), delete
+src/controllers/homeController.js + studentController.js  # PRG + session flash
+src/routes/index.js
+views/home.ejs / views/students.ejs
+public/css/app.css / public/js/app.js
+data/students.json
+tests/*.test.js (Jest + Supertest)
+```
 
-```mermaid
-flowchart TD
-    subgraph Client["Web Browser / Client"]
-        Browser["User Browser / HTTP Client"]
-    end
-
-    subgraph Controllers["Spring Boot MVC Controllers"]
-        HC["HomeController"]
-        SC["StudentController"]
-    end
-
-    subgraph Business["Service Layer"]
-        SS["StudentService"]
-    end
-
-    subgraph Persistence["Storage Layer (Thread-Safe JSON)"]
-        JSR["JsonStudentRepository"]
-        Lock["ReentrantReadWriteLock"]
-        File[("data/students.json")]
-    end
-
-    subgraph Views["SSR Views (Thymeleaf)"]
-        HV["home.html"]
-        SV["students.html"]
-    end
-
-    %% Flow 1: Home Page
-    Browser -->|"GET /"| HC
-    HC -->|"Render view"| HV
-
-    %% Flow 2: Get Students List
-    Browser -->|"GET /students"| SC
-    SC -->|"getAllStudents()"| SS
-    SS -->|"findAll()"| JSR
-    JSR -.->|"Acquire Read Lock"| Lock
-    Lock -.->|"Read JSON array"| File
-    SC -->|"Render model & student list"| SV
-
-    %% Flow 3: Add Student
-    Browser -->|"POST /students (Form Data)"| SC
-    SC -->|"Validate @Valid"| ValCheck{"Valid Form?"}
-    ValCheck -->|"No (Field Errors)"| SV
-    ValCheck -->|"Yes"| SS
-    SS -->|"Check Duplicate ID"| DupCheck{"ID Exists?"}
-    DupCheck -->|"Yes (Duplicate)"| SV
-    DupCheck -->|"No (Unique)"| JSR
-    JSR -.->|"Acquire Write Lock"| Lock
-    Lock -.->|"Atomic File Swap"| File
-    SC -->|"302 Redirect (PRG Pattern)"| Browser
-
-    %% Flow 4: Delete Student (Form & REST)
-    Browser -->|"POST /students/{id}/delete (HTML Form)"| SC
-    Browser -->|"DELETE /students/{id} (REST)"| SC
-    SC -->|"deleteStudent(id)"| SS
-    SS -->|"deleteById(id)"| JSR
-    JSR -.->|"Acquire Write Lock & Atomic Swap"| File
-    SC -->|"302 Redirect + Flash Message (Form)"| Browser
-    SC -->|"204 No Content / 404 Not Found (REST)"| Browser
+## Data Flow
+```
+Browser --GET /--> homeController --> views/home.ejs
+Browser --GET /students--> studentController.list --> StudentService.getAll --> JsonStudentRepository.findAll --> data/students.json --> views/students.ejs
+Browser --POST /students--> validateStudent --> duplicate check --> save (mutex + atomic rename) --> 302 /students (flash) / 200 re-render + openModal on error
+Browser --POST /students/:id/delete--> delete --> 302 + flash
+Browser --DELETE /students/:id--> 204 / 404
 ```
 
 ---
 
 ## Endpoints
-
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/` | Landing/Home page with project features, development team roster, and CTA to `/students` |
-| `GET` | `/students` | Student Directory page rendering the full list of students, actions, and the "Add Student" modal |
-| `POST` | `/students` | Form submission endpoint to add a new student (PRG redirect on success, modal re-open on failure) |
-| `POST` | `/students/{id}/delete` | HTML form action to delete a student by ID with confirmation prompt (302 redirect with flash message) |
-| `DELETE` | `/students/{id}` | REST endpoint to delete a student by ID (`204 No Content` on success, `404 Not Found` if student ID not found) |
-
----
-
-## Known Limitations & Security Notes
-- **Authentication & CSRF:** This project is intentionally designed for local or classroom demonstration. It does not enforce user authentication or CSRF protection. In production environments, Spring Security with CSRF protection and role-based access control should be configured prior to exposing mutation endpoints.
-- **Local Data Reset:** If you previously ran an earlier version of the project, delete your local `data/students.json` file once to allow the application to automatically reseed the clean team roster with the standardized `Major` values.
+| `GET` | `/` | Landing page with features, team roster, CTA to `/students` |
+| `GET` | `/students` | Directory page with full list, search, Add modal |
+| `POST` | `/students` | Add student (PRG on success, modal re-open on failure) |
+| `POST` | `/students/{id}/delete` | HTML form delete (302 + flash) |
+| `DELETE` | `/students/{id}` | REST delete (`204` / `404`) |
 
 ---
 
 ## How to Run
+Requires Node.js 20+.
 
-### 1. Run the Application
-Execute using the included Maven Wrapper:
 ```bash
-./mvnw spring-boot:run
-```
-The server will start at: `http://localhost:8080/`
-
-- Access Home page: [http://localhost:8080/](http://localhost:8080/)
-- Access Students Directory: [http://localhost:8080/students](http://localhost:8080/students)
-
-### 2. Run Automated Tests
-Execute the full test suite (Repository, Service, and Web MVC MockMvc tests isolated from production data):
-```bash
-./mvnw test
+cp .env.example .env   # optional; defaults PORT=8080, STORAGE_PATH=data/students.json
+npm install
+npm start              # http://localhost:8080/
+npm run dev            # watch mode
+npm test               # Jest + Supertest (25 tests)
 ```
 
-### 3. Package to Executable JAR
-```bash
-./mvnw clean package
-java -jar target/student-management-0.0.1-SNAPSHOT.jar
-```
+- Home: http://localhost:8080/
+- Directory: http://localhost:8080/students
+
+Config via env: `PORT`, `STORAGE_PATH`, `SESSION_SECRET`.
+
+---
+
+## Notes
+- Ported 1:1 from Spring Boot version: same validation messages, flash texts, sorting (ID asc, case-insensitive), seed data, atomic-write semantics.
+- No auth/CSRF (classroom demo scope). Add `helmet` + `csurf` + auth before exposing publicly.
+- If you kept an old `data/students.json` with extra test rows, delete it once to reseed the clean 3-member roster.
