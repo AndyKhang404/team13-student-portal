@@ -1,6 +1,6 @@
-# Student Management System (SSR with Java + Spring Boot)
+# Student Management System (SSR with Node.js + Express + EJS)
 
-A Server-Side Rendered (SSR) web application built with Java, Spring Boot, and Thymeleaf. Student data is persisted strictly using a JSON file (`data/students.json`) with thread-safe file operations and zero database/ORM dependencies.
+A Server-Side Rendered (SSR) web application built with Node.js, Express 4, and EJS. Refactored in-place from the original Java + Spring Boot + Thymeleaf version. Scope strictly covers **Add**, **List**, and **Delete** student operations. Data is persisted in `data/students.json` with a mutex and atomic file swaps — zero database/ORM.
 
 ## Members
 |Student ID|Name|
@@ -12,47 +12,80 @@ A Server-Side Rendered (SSR) web application built with Java, Spring Boot, and T
 ---
 
 ## Features
-- **Server-Side Rendering (SSR):** Powered by Thymeleaf and styled with Bootstrap 5.
-- **Pure JSON Storage:** All student data is stored in [`data/students.json`](file:///home/pbkhang404/Projects/S1/web/block3/data/students.json) with `ReentrantReadWriteLock` for concurrency safety and atomic file swapping.
-- **Pre-seeded Roster:** Automatically initializes and seeds the roster with the team members on first run if the file does not exist.
+- **Server-Side Rendering (SSR):** EJS templates styled with Bootstrap 5.
+- **Pure JSON Storage:** `data/students.json` with `async-mutex` + atomic temp-file rename.
+- **Pre-seeded Roster & Retention:** Seeds team roster on first run if file missing. Empty `[]` preserved across restarts.
 - **Form Validation & Duplicate Check:**
-  - Mandatory fields: Student ID, Full Name, Email, Major.
+  - Mandatory: Student ID, Full Name, Email, Major.
+  - Student ID: exactly 8 digits (`^[0-9]{8}$`).
+  - Major: single source of truth in `src/models/majors.js` (`Computer Science`, `Software Engineering`, `Information System`, `Cyber Security`).
   - Email format validation.
-  - Unique Student ID verification with inline error feedback.
-  - Post-Redirect-Get (PRG) pattern with automatic modal re-opening and form input preservation upon validation errors.
+  - Unique Student ID with inline error.
+  - PRG pattern with modal re-open + input preservation on errors.
+- **Record Deletion:**
+  - Web UI via `POST /students/{id}/delete` with confirm + flash.
+  - REST via `DELETE /students/{id}` (`204` / `404`).
+
+---
+
+## Project Structure
+```
+package.json / server.js / app entry (src/app.js)
+src/config.js                    # PORT, STORAGE_PATH, SESSION_SECRET
+src/models/majors.js             # ALLOWED_MAJORS + isValid + majorClass
+src/models/validators.js         # trims + Jakarta-parity messages
+src/errors.js                    # DuplicateStudentIdException
+src/repositories/jsonStudentRepository.js  # findAll/findById/existsById/save/deleteById + seed + atomic write
+src/services/studentService.js   # sorted getAll, add (duplicate guard), delete
+src/controllers/homeController.js + studentController.js  # PRG + session flash
+src/routes/index.js
+views/home.ejs / views/students.ejs
+public/css/app.css / public/js/app.js
+data/students.json
+tests/*.test.js (Jest + Supertest)
+```
+
+## Data Flow
+```
+Browser --GET /--> homeController --> views/home.ejs
+Browser --GET /students--> studentController.list --> StudentService.getAll --> JsonStudentRepository.findAll --> data/students.json --> views/students.ejs
+Browser --POST /students--> validateStudent --> duplicate check --> save (mutex + atomic rename) --> 302 /students (flash) / 200 re-render + openModal on error
+Browser --POST /students/:id/delete--> delete --> 302 + flash
+Browser --DELETE /students/:id--> 204 / 404
+```
 
 ---
 
 ## Endpoints
-
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/` | Landing/Home page with project features, development team roster, and CTA to `/students` |
-| `GET` | `/students` | Student Directory page rendering the full list of students and the "Add Student" modal |
-| `POST` | `/students` | Form submission endpoint to add a new student |
+| `GET` | `/` | Landing page with features, team roster, CTA to `/students` |
+| `GET` | `/students` | Directory page with full list, search, Add modal |
+| `POST` | `/students` | Add student (PRG on success, modal re-open on failure) |
+| `POST` | `/students/{id}/delete` | HTML form delete (302 + flash) |
+| `DELETE` | `/students/{id}` | REST delete (`204` / `404`) |
 
 ---
 
 ## How to Run
+Requires Node.js 20+.
 
-### 1. Run the Application
-Execute using the included Maven Wrapper:
 ```bash
-./mvnw spring-boot:run
-```
-The server will start at: `http://localhost:8080/`
-
-- Access Home page: [http://localhost:8080/](http://localhost:8080/)
-- Access Students Directory: [http://localhost:8080/students](http://localhost:8080/students)
-
-### 2. Run Automated Tests
-Execute the full test suite (Repository, Service, and Web MVC MockMvc tests):
-```bash
-./mvnw test
+cp .env.example .env   # optional; defaults PORT=8080, STORAGE_PATH=data/students.json
+npm install
+npm start              # http://localhost:8080/
+npm run dev            # watch mode
+npm test               # Jest + Supertest (25 tests)
 ```
 
-### 3. Package to Executable JAR
-```bash
-./mvnw clean package
-java -jar target/student-management-0.0.1-SNAPSHOT.jar
-```
+- Home: http://localhost:8080/
+- Directory: http://localhost:8080/students
+
+Config via env: `PORT`, `STORAGE_PATH`, `SESSION_SECRET`.
+
+---
+
+## Notes
+- Ported 1:1 from Spring Boot version: same validation messages, flash texts, sorting (ID asc, case-insensitive), seed data, atomic-write semantics.
+- No auth/CSRF (classroom demo scope). Add `helmet` + `csurf` + auth before exposing publicly.
+- If you kept an old `data/students.json` with extra test rows, delete it once to reseed the clean 3-member roster.
